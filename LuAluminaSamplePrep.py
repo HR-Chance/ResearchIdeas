@@ -21,13 +21,10 @@ lutetiumNitrate = (lu_mass + no3_mass * 3)  # g/mol
 def solutionA(X_Lu, X_Al, X_MgO, X_O, Fin_Mass):
     global lu_mass, al_mass, o_mass, mgo_mass, aluminumNitrateNonahydrate, magnesiumNitrateHexahydrate, lutetiumNitrate
     luAlO = lu_mass*X_Lu + al_mass*X_Al + o_mass*X_O  # Molar mass of Lu-Alumina in g/mol
-    finMass = 25  # Final mass of Lu-Alumina sample in grams
-
     # Calculate the moles of each precursor needed
-    molesLu = (X_Lu * finMass) / luAlO  # Moles of Lutetium
-    molesAl = (X_Al * finMass) / luAlO  # Moles of Aluminum
-    molesMgO = (X_MgO * finMass) / mgo_mass  # Moles of Magnesium Oxide
-
+    molesLu = (X_Lu * Fin_Mass) / luAlO  # Moles of Lutetium
+    molesAl = (X_Al * Fin_Mass) / luAlO  # Moles of Aluminum
+    molesMgO = (X_MgO * Fin_Mass) / mgo_mass  # Moles of Magnesium Oxide
     # Calculate the mass of each precursor needed
     massLuNitrate = molesLu * lutetiumNitrate  # Mass of Lutetium Nitrate in grams
     massAlNitrate = molesAl * aluminumNitrateNonahydrate  # Mass of Aluminum Nitrate in grams
