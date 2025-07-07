@@ -1,5 +1,7 @@
 # LuAluminaSamplePrep.py
 # This file is intended for calculating the precursors for producing Lu-Alumina samples
+# Reference paper for the procedure: "Structural Effects of Lanthanide Dopants on Alumina"
+# DOI: https://doi.org/10.1038/srep39946
 
 # Define the molecular weights (g/mol) as global variables
 lu_mass = 174.9668      # Lutetium
@@ -14,6 +16,7 @@ mgo_mass = mg_mass + o_mass  # Molar mass of Magnesium Oxide in g/mol
 aluminumNitrateNonahydrate = (al_mass + no3_mass * 3 + h2o_mass * 9)  # g/mol
 magnesiumNitrateHexahydrate = (mg_mass + no3_mass * 2 + h2o_mass * 6)  # g/mol
 lutetiumNitrate = (lu_mass + no3_mass * 3)  # g/mol
+
 
 def solutionA(X_Lu, X_Al, X_MgO, X_O, Fin_Mass):
     global lu_mass, al_mass, o_mass, mgo_mass, aluminumNitrateNonahydrate, magnesiumNitrateHexahydrate, lutetiumNitrate
