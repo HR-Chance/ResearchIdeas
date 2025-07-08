@@ -29,12 +29,13 @@ d178 = np.log(2)/(28.4*60)  # decay constant of Lu-178 in s^-1
 
 
 # Reactor Flux in neutrons per m^2 per second
-therm_flux = 1e17  # Thermal neutron flux in neutrons/m^2/s
+therm_flux = 1e20  # Thermal neutron flux in neutrons/m^2/s
 epi_flux = 1e16  # Epithermal neutron flux in neutrons/m^2/s
 
 def dN175(n175):
     global s175_176, i175_176, s175_176m, i175_176m, therm_flux, epi_flux
     change = -n175*((s175_176+s175_176m)*therm_flux + (i175_176+i175_176m)*epi_flux)
+    # print(f"dN175: {change}")
     return change
 
 def dN176(n175, n176):
@@ -89,9 +90,9 @@ def main():
 
     # Duration of irradiation and step
     days = 60  # Duration of irradiation in days
-    time = np.linspace(0, days*86400, num=5000)  # Time in seconds
+    time = np.linspace(0, days*86400, num=1000000)  # Time in seconds
     dt = time[1] - time[0]  # Time step in seconds
-
+    print(f"Time step: {dt} seconds")
     # Calculate the number of atoms over time
     for t in time:
         lu175_atoms.append(lu175_atoms[-1]+dN175(lu175_atoms[-1]))
@@ -101,19 +102,22 @@ def main():
         lu177m_atoms.append(lu177m_atoms[-1]+dN177m(lu176_atoms[-1], lu177m_atoms[-1]))
         lu178_atoms.append(lu178_atoms[-1]+dN178(lu177_atoms[-1], lu177m_atoms[-1], lu178_atoms[-1]))
 
+    
     plt.figure(figsize=(10, 6))
-    plt.plot(time, lu175_atoms, label='Lu-175')
-    plt.plot(time, lu176_atoms, label='Lu-176')
-    plt.plot(time, lu176m_atoms, label='Lu-176m')
-    plt.plot(time, lu177_atoms, label='Lu-177')
-    plt.plot(time, lu177m_atoms, label='Lu-177m')
-    plt.plot(time, lu178_atoms, label='Lu-178')
+    plt.plot(time, lu175_atoms[:-1], label='Lu-175')
+    plt.plot(time, lu176_atoms[:-1], label='Lu-176')
+    plt.plot(time, lu176m_atoms[:-1], label='Lu-176m')
+    plt.plot(time, lu177_atoms[:-1], label='Lu-177')
+    plt.plot(time, lu177m_atoms[:-1], label='Lu-177m')
+    plt.plot(time, lu178_atoms[:-1], label='Lu-178')
     plt.xlabel('Time (days)')
     plt.ylabel('Number of Atoms')
     plt.title('Number of Atoms of Each Isotope Over Time')
     plt.legend()
     plt.tight_layout()
+    plt.yscale('log')
     plt.show()
+    
 
 if __name__ == "__main__":
     main()
