@@ -3,6 +3,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import scipy.constants as con
 
+# Code written by Henry R. Chance
+# This code is intended to calculate the activity of a Mossbauer sample containing Lutetium isot
+
 # Define the molecular weights (g/mol) as global variables
 lu_mass = 174.9668      # Lutetium
 al_mass = 26.981538      # Aluminum

@@ -1,4 +1,5 @@
-# LuAluminaSamplePrep.py
+
+# This code is written by Henry R. Chance
 # This file is intended for calculating the precursors for producing Lu-Alumina samples
 # Reference paper for the procedure: "Structural Effects of Lanthanide Dopants on Alumina"
 # DOI: https://doi.org/10.1038/srep39946
