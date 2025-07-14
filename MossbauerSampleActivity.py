@@ -95,7 +95,6 @@ def main():
     xLu175 = 0.97401  # Abundance of Lu-175
     xLu176 = 0.02599  # Abundance of Lu-176
 
-
     # Initialize quantities
     lu175_atoms = [xLu175 * nLu]   # Lu-175
     lu176_atoms = [xLu176 * nLu]   # Lu-176
@@ -199,8 +198,8 @@ def main():
     plt.show()  
 
     # # Print the maximum activity of each isotope
-    # print("Maximum Activity of 177mLu:", np.round(activityMax['177mLu'], 3), "Ci")
-    # print("Maximum Activity of 177Lu:", np.round(activityMax['177Lu'], 3), "Ci")
+    print("Maximum Activity of 177mLu:", np.round(activityMax['177mLu'], 3), "Ci")
+    print("Maximum Activity of 177Lu:", np.round(activityMax['177Lu'], 3), "Ci")
 
 
     #######################################################################
