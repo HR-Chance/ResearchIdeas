@@ -37,7 +37,7 @@ decay_constants = {
 }
 
 # Reactor Flux in neutrons per m^2 per second
-therm_flux = 1e20  # Thermal neutron flux in neutrons/m^2/s
+therm_flux = 1e17  # Thermal neutron flux in neutrons/m^2/s
 epi_flux = 1e16  # Epithermal neutron flux in neutrons/m^2/s
 
 def dN_dt(t, y):
@@ -80,17 +80,22 @@ def main():
     xLu = 0.002  # Desired mole fraction of Lutetium in the final sample
     xAl = 1.998  # Desired mole fraction of Aluminum in the final sample
     xO = 3       # Desired mole fraction of Oxygen in the final sample
-    luAlO_mass = lu_mass * xLu + al_mass * xAl + o_mass * xO  # Molar mass of Lu-Alumina in g/mol
+    luAl2O3_mass = lu_mass * xLu + al_mass * xAl + o_mass * xO  # Molar mass of Lu-Alumina in g/mol
     
     ## Initial Quantities
     # Mass of sample and number of Lu Atoms
-    massLuAlO = 25  # Mass of Lu-Alumina sample in grams
-    nLu = lu_mass * xLu * (massLuAlO/luAlO_mass) * con.N_A # Number of Lutetium atoms
+    volumeLuAl2O3 = con.pi*0.25  # Volume of Lu-Alumina sample in cm^3 (20mm by 2.5mm disk)
+    denAl2O3 = 3.987  # Density of Lu-Alumina in g/cm^3
+    nLu = lu_mass * xLu * (volumeLuAl2O3 * denAl2O3 / luAl2O3_mass) * con.N_A # Number of Lutetium atoms
 
-    # Isotopic Abundances
+    #############################
+    #### Isotopic Abundances ####
+    #############################
+    # Natural abundances of Lutetium isotopes
     xLu175 = 0.97401  # Abundance of Lu-175
     xLu176 = 0.02599  # Abundance of Lu-176
-    
+
+
     # Initialize quantities
     lu175_atoms = [xLu175 * nLu]   # Lu-175
     lu176_atoms = [xLu176 * nLu]   # Lu-176
@@ -100,19 +105,46 @@ def main():
     lu178_atoms = [0]              # Lu-178
 
     # Duration of irradiation and step
-    days = 30  # Duration of irradiation in days
-    t_span = (0, days * 86400)  # Time span for the ODE solver
+    days = 5  # Duration of irradiation in days
+    hoursPerDay = 16  # Hours of irradiation per day
+    t_span = (0, days * hoursPerDay * 3600)  # Time span for the ODE solver
     t_eval = np.linspace(t_span[0], t_span[1], 1000)  # 1000 steps
 
     # Initial conditions
     N0 = [lu175_atoms[0], lu176_atoms[0], lu177m_atoms[0], lu177_atoms[0], lu176m_atoms[0], lu178_atoms[0]]
     sol = solve_ivp(dN_dt, t_span, N0, t_eval=t_eval, method="Radau")
     time_days = sol.t / (24 * 3600)
+    
+    ###########################################################
+    ## Calculate Transmutation for Various Lu-176 Abundances ##
+    ###########################################################
+    # Varying Lu-176 abundance from 2.599% to 50%
+    lu176Abundances = np.linspace(0.02599, 0.5, num=100)  # Varying Lu-176 abundance from 2.599% to 50%
+    lis177mLu = []  # List to store the maximum number of Lu-177m atoms for each abundance
+    lis177Lu = []  # List to store the maximum number of Lu-177 atoms for each abundance
+    for abund in lu176Abundances:
+        x176Lu = abund
+        x175Lu = 1 - x176Lu
 
-    ####################################
-    # Plot number of Atoms of Each Isotope Over Time
-    #####################################
-    plt.figure(figsize=(10, 6))
+        # Update initial conditions
+        init_175Lu = [x175Lu * nLu]
+        init_176Lu = [x176Lu * nLu]
+        init_176mLu = [0]
+        init_177Lu = [0]
+        init_177mLu = [0]
+        init_178Lu = [0]
+
+        # Solve the ODE
+        tmpN0 = [init_175Lu[0], init_176Lu[0], init_177mLu[0], init_177Lu[0], init_176mLu[0], init_178Lu[0]]
+        tmpSol = solve_ivp(dN_dt, t_span, tmpN0, t_eval=t_eval, method="Radau")
+        
+        lis177mLu.append(np.max(tmpSol.y[2]))  # Maximum number of Lu-177m atoms
+        lis177Lu.append(np.max(tmpSol.y[3]))  # Maximum number of Lu-177 atoms
+
+    ####################################################
+    ## Plot number of Atoms of Each Isotope Over Time ##
+    ####################################################
+    plt.figure(1, figsize=(10, 6))
     # remove '175Lu' from labels and sol.y for plotting
     labels = ['176Lu', '177mLu', '177Lu', '176mLu', '178Lu']
     soln = sol.y[1:]  # Skip the first isotope (175Lu)
@@ -124,12 +156,11 @@ def main():
     plt.yscale('log')
     plt.xlabel('Irradiation Time (days)')
     plt.ylabel('Number of Atoms (log scale)')
-    plt.title('Neutron Irradiation of ' + str(massLuAlO) + 'g Lu:Al2O3\n(Thermal + Epithermal Flux)')
+    plt.title('Neutron Irradiation of ' + str(np.round(volumeLuAl2O3 * denAl2O3,2)) + 'g Lu:Al2O3\n(Thermal + Epithermal Flux)')
     plt.legend()
     plt.grid(True, which="both", ls="-")
     plt.tight_layout()
     plt.show()
-
 
 
     ######################################################################################
@@ -140,31 +171,54 @@ def main():
     activity = {}
     activityMax = {}
     solnMax = sol.y[2:, indmax]  # Skip the first two isotopes (175Lu)
-    decayTime = np.linspace(0, 60*24*3600, 1000)  # 5 Days of Decay time in seconds
+    decayDays = 60  # Decay time in days after irradiation
+    decayTime = np.linspace(0, decayDays*24*3600, 1000)  # 60 Days of Decay time in seconds
     decayTimeDays = decayTime / (24 * 3600)  # Convert to days
     for i, iso in enumerate(['177mLu', '177Lu', '176mLu', '178Lu']):
         # Activity in Ci at max time
         activityMax[iso] = (solnMax[i] * decay_constants[iso]) / pCi  
+
         
     for i, iso in enumerate(['177mLu', '177Lu', '176mLu', '178Lu']):
         # Calculate activity over decay time
         activity[iso] = activityMax[iso] * np.exp(-decay_constants[iso] * decayTime)
 
-    # Plot mass of each isotope over time
-    plt.figure(figsize=(10, 6))
+    # Plot activity of each isotope over time after irradiation
+    plt.figure(2, figsize=(10, 6))
 
     for i, iso in enumerate(['177mLu', '177Lu', '176mLu', '178Lu']):
         plt.plot(decayTimeDays, activity[iso], label=f'{iso}')
     plt.yscale('log')
     plt.xlabel('Decay Time (days)')
     plt.ylabel('Activity (Ci)')
-    plt.title('Activity of Each Lu Isotope vs Time')
+    plt.title('Activity of Each Lu Isotope After Neutron Irradiation at Natural Abundance')
     plt.grid(True)
-    plt.ylim(0.1, 1e6)  # Set y-axis limits for better visibility
+    plt.ylim(1e-3, 1e3)  # Set y-axis limits for better visibility
     plt.legend()
     plt.tight_layout()
-    plt.show()   
-    
+    plt.show()  
 
+    # # Print the maximum activity of each isotope
+    # print("Maximum Activity of 177mLu:", np.round(activityMax['177mLu'], 3), "Ci")
+    # print("Maximum Activity of 177Lu:", np.round(activityMax['177Lu'], 3), "Ci")
+
+
+    #######################################################################
+    ## Plot Activity of Lu-177m and Lu-177 for Varying Lu-176 Abundances ##
+    #######################################################################
+    act177mLu = np.array(lis177mLu) * decay_constants['177mLu'] / pCi  # Activity of Lu-177m in Ci
+    act177Lu = np.array(lis177Lu) * decay_constants['177Lu'] / pCi  # Activity of Lu-177 in Ci
+
+    plt.figure(3, figsize=(10, 6))
+    plt.yscale('log')  # Set y-axis to logarithmic scale
+    plt.plot(lu176Abundances * 100, act177mLu, label='177mLu')
+    plt.plot(lu176Abundances * 100, act177Lu, label='177Lu')
+    plt.xlabel('Lu-176 Abundance (%)')
+    plt.ylabel('Activity (Ci)')
+    plt.title('Activity of Lu-177m and Lu-177 for Varying Lu-176 Abundances\n (5 days of irradiation)')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 if __name__ == "__main__":
     main()
