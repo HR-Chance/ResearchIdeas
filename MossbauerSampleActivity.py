@@ -81,7 +81,7 @@ def main():
     xLu = 0.002  # Desired mole fraction of Lutetium in the final sample
     xAl = 1.998  # Desired mole fraction of Aluminum in the final sample
     xO = 3       # Desired mole fraction of Oxygen in the final sample
-    sampleSize = con.pi*0.1 # Volume of Sample in cm^3 (20mm diameter 1mm thick disk)
+    sampleSize = con.pi*(4**2)*0.1 # Volume of Sample in cm^3 (20mm diameter 1mm thick disk)
 
     # Natural abundances of Lutetium isotopes
     xLu175 = 0.97401  # Abundance of Lu-175
@@ -172,7 +172,7 @@ def main():
         for i, iso in enumerate(['176mLu', '177Lu', '177mLu', '178Lu']):
             # Activity in Ci at max time
             activityMax[lattice][iso] = (solnMax[i] * decay_constants[iso]) / pCi
-            print(f'Maximum Activity of ', iso, ' in host lattice ', lattice, ':', activityMax[lattice][iso])
+            # print(f'Maximum Activity of ', iso, ' in host lattice ', lattice, ':', activityMax[lattice][iso])
             activity[lattice][iso] = activityMax[lattice][iso] * np.exp(-decay_constants[iso] * decayTime)
 
     # Plot activity of each isotope over time after irradiation
@@ -192,10 +192,10 @@ def main():
     plt.tight_layout()
     plt.show()  
 
-    # # Print the maximum activity of each isotope
+    # Print the maximum activity of each isotope
     for lattice in nLu:
-        print(f"Maximum Activity of 177mLu in {lattice}: {np.round(activityMax[lattice]['177mLu'], 5)} Ci")
-        print(f"Maximum Activity of 177Lu in {lattice}: {np.round(activityMax[lattice]['177Lu'], 5)} Ci")
+        print(f"Maximum Activity of 177mLu in {lattice}: {activityMax[lattice]['177mLu']*pCi:.2e} Bq")
+        print(f"Maximum Activity of 177Lu in {lattice}: {activityMax[lattice]['177Lu']*pCi:.2e} Bq")
 
 if __name__ == "__main__":
     main()
