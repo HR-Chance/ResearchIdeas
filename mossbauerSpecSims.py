@@ -74,66 +74,106 @@ def velocityDetuning(vel,freq):
 
 def main():
     # Define parameters
+    lu_mass = 174.9668      # Lutetium
+    al_mass = 26.981538      # Aluminum
+    o_mass = 15.999          # Oxygen
+    xLu = 0.002  # Desired mole fraction of Lutetium in the final sample
+    xAl = 1.998  # Desired mole fraction of Aluminum in the final sample
+    xO = 3       # Desired mole fraction of Oxygen in the final sample
     mLu = 176.9437636 * con.atomic_mass # Lutetium mass in kg
     Egamma = 121.62e3  # Gamma energy in eV
     freqGamma = Egamma * con.e / con.h  # Frequency of gamma transition in Hz
     finDecayHL = 117e-12  # Final decay half-life in seconds
     finDecayRate = finDecayHL / np.log(2)  # Final decay parameter in s 
-    decayCon177mLu = np.log(2)/(160.35*24*3600)  # Decay constant for 177mLu in s^-1
-    ci177mLu = 0.002  # Initial activity in Ci
-    activity177mLu = ci177mLu * 3.7e10  # Convert to Bq
     IC_Coefficient = 0.773 # Internal conversion coefficient for 177mLu
     I_a = 7/2  # Spin of the ground state for 177mLu
     I_b = 9/2  # Spin of the excited state for 177mLu
     eta_Lu = 0.0629 # Decay fraction at desired energy (121.621 keV)
-    # Debye Temperatures
-    debye = {'LuAG': 750, 'LuAl2O3': 950, 'Lu2O3': 400}  # Debye temperatures in K for different materials
-    # Activity of 177mLu in Bq
-    activity = {'LuAg':}
-
-    debeye_LuAG = 750  # Debye temperature for LuAG in K
     # Energy Uncertainty of Transition
     dE_Lu = con.hbar / (finDecayRate*con.e) # Energy uncertainty in eV
+    detectorThickness = 0.1 # 1mm listed in cm
+    detector = con.pi*(4**2)*detectorThickness # Detector Size (0.5mm thick and 8cm in diameter) cm^3
 
+    debye = {
+        'LuAl2O3': 950,
+        'LuAG': 750, 
+        'Lu2O3': 400
+    }  # Debye temperatures in K for different materials
+
+    activity = {
+        'LuAl2O3': 2.87e6,
+        'LuAG':8.7e8, 
+        'Lu2O3': 1.74e9
+    }
+
+    n177Lu = { # Calculated using transmutation code following detector size listed here
+        'LuAl2O3': 3.17e16,
+        'LuAG': 9.62e18, 
+        'Lu2O3': 1.93e19
+    }
     ###################################################################
     #### Plot the Recoilless Fraction as a Function of Temperature ####
     ###################################################################
     temps = np.linspace(4, 300, num=100)  # Temperature range
-    frac = [recoillessFraction(mLu, Egamma, debeye_LuAG, T) for T in temps]  # Recoilless fraction for each temperature
+    frac = {
+        'LuAG': [],
+        'LuAl2O3': [],
+        'Lu2O3': []
+    }
+    for material, debeye_temp in debye.items():
+        frac[material] = [recoillessFraction(mLu, Egamma, debeye_temp, T) for T in temps] # Recoilless fraction for each temperature
     plt.figure(figsize=(10, 6))
-    plt.plot(temps, frac, label='Recoilless Fraction')
+    for material in debye:
+        plt.plot(temps,frac[material], label = material)
+        print("Recoilless Fraction for ",material," at 300K:", round(recoillessFraction(mLu, Egamma, debye[material], 300),4))
     plt.xlabel('Temperature (K)')
     plt.ylabel('Recoilless Fraction')
-    plt.title('Recoilless Fraction of LuAG Lattice')
-    # plt.legend()
-    plt.grid()
-    plt.show()
-    print("Recoilless Fraction at 300K:", round(recoillessFraction(mLu, Egamma, debeye_LuAG, 300),4))
-
-
-    #####################################################################
-    #### Plot the Absorption Cross-Section as a Function of Velocity ####
-    #####################################################################
-    vel = np.linspace(-0.02,0.02,num=1000)  # Velocity range in m/s
-    detunes = [velocityDetuning(v, freqGamma) for v in vel]  # Detuning energies in eV
-    maxCross = maximumAbsorptionCross(I_a, I_b, IC_Coefficient, con.c/freqGamma, recoillessFraction(mLu, Egamma, debeye_LuAG, 300))  # Maximum absorption cross-section
-    absCross = [absorptionCross(detune, dE_Lu, maxCross) for detune in detunes]  # Absorption cross-section for each detuning (m^2)
-    absCross = np.array(absCross) * 1e4  # Convert to numpy array for plotting and to cm^2
-    plt.figure(figsize=(10, 6))
-    plt.plot(vel, absCross, label='Absorption Cross-Section')
-    plt.xlabel('Velocity (m/s)')
-    plt.ylabel('Absorption Cross-Section (cm^2)')
-    plt.title('Absorption Cross-Section of LuAG Lattice')
+    plt.title('Recoilless Fraction of Various Lutetium Bearing Lattices')
     plt.legend()
     plt.grid()
     plt.show()
-    print("Maximum Absorption Cross-Section:", round(maxCross*1e4, 4), "cm^2")
+    
+    #####################################################################
+    #### Plot the Absorption Cross-Section as a Function of Velocity ####
+    #####################################################################
+    vel = np.linspace(-0.05,0.05,num=1000)  # Velocity range in m/s
+    detunes = [velocityDetuning(v, freqGamma) for v in vel]  # Detuning energies in eV
+    maxCross = {}
+    absCross = {}
+    plt.figure(figsize=(10, 6))
+    for material in debye:
+        maxCross[material] = maximumAbsorptionCross(I_a, I_b, IC_Coefficient, con.c/freqGamma, recoillessFraction(mLu, Egamma, debye[material], 300))  # Maximum absorption cross-section
+        absCross[material] = [absorptionCross(detune, dE_Lu, maxCross[material]) for detune in detunes]  # Absorption cross-section for each detuning (m^2)
+        absCross[material] = np.array(absCross[material]) * 1e4  # Convert to numpy array for plotting and to cm^2
+        print(f"{material} Max Absorption Cross-Section: {maxCross[material]:.2e} cm^2")
+        plt.plot(vel,absCross[material], label = material)
+    plt.xlabel('Velocity (m/s)')
+    plt.ylabel('Absorption Cross-Section (cm^2)')
+    plt.title('Absorption Cross-Section of Various Lutetium Lattices')
+    plt.legend()
+    plt.grid()
+    plt.show()
 
     ###################################################
     #### Plot the Signal as a Function of Detuning ####
     ###################################################
-    solidAngle = 0.1  # Estimated solid angle in steradians
-    emissions = activity177mLu * eta_Lu * IC_Coefficient * recoillessFraction(mLu, Egamma, debeye_LuAG, 300)
+    fluxFrac = 0.1  # Estimated fraction of flux at absorber
+    emissions = {}
+    signal = {}
+    plt.figure(figsize=(10,6))
+    for material in ['LuAl2O3', 'LuAG', 'Lu2O3']: #  'LuAl2O3', 'LuAG', 'Lu2O3'
+        emissions[material] = activity[material]*eta_Lu*(1-IC_Coefficient)*fluxFrac
+        print(f'{material} Count Rate: {emissions[material]:.2e}')
+        signal[material] = emissions[material] * np.exp(-absCross[material]*n177Lu[material]*detectorThickness)
+        plt.plot(vel,signal[material], label = material)
+    plt.yscale('log')
+    plt.xlabel('Velocity (m/s)')
+    plt.ylabel('Detected Count Rate (counts/s)')
+    plt.title('Mossbauer Absorption Signal in Various Lutetium Lattices')
+    # plt.ylim(1e5, 1e7)  # Set y-axis limits for better visibility
+    plt.legend()
+    plt.grid()
+    plt.show() 
 
 if __name__ == "__main__":
     main()

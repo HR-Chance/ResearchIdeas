@@ -81,7 +81,7 @@ def main():
     xLu = 0.002  # Desired mole fraction of Lutetium in the final sample
     xAl = 1.998  # Desired mole fraction of Aluminum in the final sample
     xO = 3       # Desired mole fraction of Oxygen in the final sample
-    sampleSize = con.pi*(4**2)*0.1 # Volume of Sample in cm^3 (20mm diameter 1mm thick disk)
+    sampleSize = con.pi*(4**2)*0.1 # Volume of Sample in cm^3 (80mm diameter 1mm thick disk)
 
     # Natural abundances of Lutetium isotopes
     xLu175 = 0.97401  # Abundance of Lu-175
@@ -187,15 +187,19 @@ def main():
     '[Thermal Flux = 1e13 neutrons/cm²/s, Epithermal Flux = 1e12 neutrons/cm²/s]\n'
     '(Lu:Al2O3 - ' + str(np.round(sampleSize * density["LuAl2O3"],1)) + 'g, LuAG - ' + str(np.round(sampleSize * density["LuAG"],1)) + 'g, Lu2O3 - ' + str(np.round(sampleSize * density["Lu2O3"],1)) + 'g)')
     plt.grid(True)
-    plt.ylim(1e-4, 1e3)  # Set y-axis limits for better visibility
+    # plt.ylim(1e-4, 1e3)  # Set y-axis limits for better visibility
     plt.legend()
     plt.tight_layout()
     plt.show()  
 
     # Print the maximum activity of each isotope
     for lattice in nLu:
-        print(f"Maximum Activity of 177mLu in {lattice}: {activityMax[lattice]['177mLu']*pCi:.2e} Bq")
-        print(f"Maximum Activity of 177Lu in {lattice}: {activityMax[lattice]['177Lu']*pCi:.2e} Bq")
+        tmpSol = results[lattice]["solution"]
+        indmax = np.argmax(tmpSol.y[4])
+        tmp177 = tmpSol.y[3]
+        tmp177m = tmpSol.y[4]
+        print(f"Maximum Activity of 177mLu in {lattice}: {activityMax[lattice]['177mLu']*pCi:.2e} Bq\n Maximum Number of 177mLu in {lattice}: {tmp177m[indmax]:.2e} Atoms")
+        print(f"Maximum Activity of 177Lu in {lattice}: {activityMax[lattice]['177Lu']*pCi:.2e} Bq\n Maximum Number of 177Lu in {lattice}: {tmp177[indmax]:.2e} Atoms")
 
 if __name__ == "__main__":
     main()
